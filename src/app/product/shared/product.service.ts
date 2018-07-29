@@ -45,6 +45,21 @@ export class ProductService {
     return this.http.post(searchUrl, formData).pipe(map((response: any) => response.json()));
   }
 
+  moreImagesUpload(files){
+    let searchUrl = 'http://localhost:5000/products/moreImagesUpload';
+    let headers = new Headers();
+    headers.append('Content-Type', 'multipart/form-data; boundary=------WebKitFormBoundary'+ Math.random());
+    headers.append('Accept','application/json');
+    let options = new RequestOptions({
+      headers: headers
+    });
+    let formData = new FormData();
+    for(let i =0; i < files.length; i++){
+      formData.append("uploads[]", files[i], files[i]['name']);
+    }
+    return this.http.post(searchUrl, formData).pipe(map((response: any) => response.json()));
+  }
+
   addProduct(productData) {
     let searchUrl = 'http://localhost:5000/products/addProduct';
     let headers = new Headers();

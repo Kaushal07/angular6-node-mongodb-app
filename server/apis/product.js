@@ -14,6 +14,7 @@
   });
 
   let upload = multer({ storage: storage }).array('file', 1);
+  let moreImagesUpload = multer({ storage: storage }).array('uploads[]', 12);
 
   app.post('/imageUpload',function(req, res) {
     upload(req, res, function(err) {
@@ -21,6 +22,16 @@
         return res.send({status:'error', message:"Something went wrong!",error:err});
       }
       return res.send({status:'success', message:"File uploaded successfully!.", fileName:req.files[0].originalname});
+    });
+
+  });
+
+  app.post('/moreImagesUpload',function(req, res) {
+    moreImagesUpload(req, res, function(err) {
+      if (err) {
+        return res.send({status:'error', message:"Something went wrong!",error:err});
+      }
+      return res.send({status:'success', message:"File uploaded successfully!.", files:req.files});
     });
 
   });
@@ -69,6 +80,7 @@ app.post('/addProduct',function(req, res) {
     ProductName:req.body.ProductName,
     ProductPrice:req.body.ProductPrice,
     ProductImage:req.body.ProductImage,
+    MoreProductImages:req.body.MoreProductImages
   });
   product.save(function(err, createdProduct) {
     if(err) {
@@ -95,6 +107,8 @@ app.put('/updateProduct',function(req, res) {
       product.ProductName = productData.ProductName;
       product.ProductPrice = productData.ProductPrice;
       product.ProductImage = productData.ProductImage;
+      product.MoreProductImages = req.body.MoreProductImages;
+
       product.save(function(err, product) {
         if(err) {
           res.send(err);
