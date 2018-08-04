@@ -3,11 +3,14 @@ import { Http, Headers, RequestOptions } from '@angular/http';
 import * as _ from 'lodash';
 import {map} from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import {apiUrl} from '../../shared/constant';
+
 
 
 @Injectable()
 export class ProductService {
   http: any;
+  apiurl:any;
 
   static get parameters() {
     return [Http];
@@ -15,25 +18,26 @@ export class ProductService {
 
   constructor(private Http : HttpClient) {
     this.http = Http;
+    this.apiurl= apiUrl;
   }
 
   getAllProducts() {
-    let searchUrl = 'http://localhost:5000/products/getProducts';
+    let searchUrl = `${this.apiurl}/getProducts`;
     return this.http.get(searchUrl).pipe(map((response: any) => response.json()));
   }
 
   getProductById(id) {
-    let searchUrl = 'http://localhost:5000/products/singleProduct/' + id;
+    let searchUrl = `${this.apiurl}/singleProduct/${id}`;
     return this.http.get(searchUrl).pipe(map((response: any) => response.json()));
   }
 
   deleteProductById(id) {
-    let searchUrl = 'http://localhost:5000/products/singleProduct?productId=' + id;
+    let searchUrl = `${this.apiurl}/singleProduct?productId=${id}`;
     return this.http.delete(searchUrl).pipe(map((response: any) => response.json()));
   }
 
   imageUpload(file){
-    let searchUrl = 'http://localhost:5000/products/imageUpload';
+    let searchUrl = `${this.apiurl}/imageUpload`;
     let headers = new Headers();
     headers.append('Content-Type', 'multipart/form-data; boundary=------WebKitFormBoundary'+ Math.random());
     headers.append('Accept','application/json');
@@ -46,7 +50,7 @@ export class ProductService {
   }
 
   moreImagesUpload(files){
-    let searchUrl = 'http://localhost:5000/products/moreImagesUpload';
+    let searchUrl = `${this.apiurl}/moreImagesUpload`;
     let headers = new Headers();
     headers.append('Content-Type', 'multipart/form-data; boundary=------WebKitFormBoundary'+ Math.random());
     headers.append('Accept','application/json');
@@ -61,7 +65,7 @@ export class ProductService {
   }
 
   addProduct(productData) {
-    let searchUrl = 'http://localhost:5000/products/addProduct';
+    let searchUrl = `${this.apiurl}/addProduct`;
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
     let options = new RequestOptions({
@@ -72,7 +76,7 @@ export class ProductService {
     }
 
   updateProduct(productData) {
-    let searchUrl = 'http://localhost:5000/products/updateProduct';
+    let searchUrl = `${this.apiurl}/updateProduct`;
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
     let options = new RequestOptions({
