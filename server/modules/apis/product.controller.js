@@ -1,7 +1,7 @@
 const Product = require('../../models/productModel');
 
 class ProductContoller {
-    constructor(app) {
+  constructor(app) {
     app.get('/getProducts', this.getAllProducts);
     app.post('/addProduct', this.addProduct);
     app.get('/singleProduct/:id', this.getProduct);
@@ -9,13 +9,20 @@ class ProductContoller {
     app.delete('/singleProduct', this.deleteProduct);
     app.post('/imageUpload', this.uploadSingleImage);
     app.post('/moreImagesUpload', this.uploadMultipleImage);
-    }
+  }
 
   getAllProducts(req, res) {
-    Product.find({}, function (err, products) {
-      if (err) throw err;
+    Product.find({})
+      .then((products) => {
       res.send(products);
-    });
+    })
+      .catch((e) => {
+      res.send({
+        error: e,
+        success: false,
+        message: "Error while getting products."
+      });
+    })
   }
 
   addProduct(req, res) {
@@ -25,94 +32,120 @@ class ProductContoller {
       ProductImage: req.body.ProductImage,
       MoreProductImages: req.body.MoreProductImages
     });
-    product.save(function (err, createdProduct) {
-      if (err) {
-        res.send({
-          success: false,
-          message: "Product not added"
-        });
-      } else {
-        res.send({
-          success: true,
-          message: "Product successfully added",
-          product: createdProduct
-        });
-      }
-    });
-
+    product.save()
+      .then((createdProduct) => {
+      res.send({
+        success: true,
+        message: "Product successfully added",
+        product: createdProduct
+      });
+    })
+      .catch((e) => {
+      res.send({
+        error: e,
+        success: false,
+        message: "Error while adding product."
+      });
+    })
   }
 
   getProduct(req, res) {
     let id = req.params.id;
-    Product.find({_id: id}, function (err, product) {
-      if (err) throw err;
+    Product.find({_id: id})
+      .then((product) => {
       res.send(product[0]);
-    });
+    })
+      .catch((e) => {
+      res.send({
+        error: e,
+        success: false,
+        message: "Error while getting product."
+      });
+    })
   }
 
   updateProduct(req, res) {
     const productData = req.body;
-    Product.findById(productData._id, function (err, product) {
-      if (err) {
-        res.send(err);
-      } else {
+    Product.findById(productData._id)
+      .then((product) => {
         product.ProductName = productData.ProductName;
         product.ProductPrice = productData.ProductPrice;
         product.ProductImage = productData.ProductImage;
         product.MoreProductImages = req.body.MoreProductImages;
-
-        product.save(function (err, product) {
-          if (err) {
-            res.send(err);
-          } else {
-            res.send({
-              success: true,
-              message: "Product successfully updated"
-            });
-          }
+        return product;
+      })
+      .then((updatedProductObj) => {
+        return updatedProductObj.save();
+      })
+      .then((updatedItem) => {
+        res.send({
+          success: true,
+          product: updatedItem,
+          message: "Product successfully updated"
         });
-      }
-    });
-
-
+      })
+      .catch((e) => {
+        res.send({
+          error: e,
+          success: false,
+          message: "Error while updating product."
+        });
+      })
   }
 
   deleteProduct(req, res) {
-    var productId = req.query.productId;
+    let productId = req.query.productId;
 
-    Product.findByIdAndRemove(productId, function (err, product) {
-      if (err) {
-        console.log(err);
-        res.send({
+    Product.findById(productId)
+      .then((foundItem) => {
+      if (!foundItem) {
+        return res.send({
           success: false,
-          message: "The request was not completed. Product with id " + product._id + " is not successfully deleted"
+          message: "Product not found.",
+          id: productId
         });
       } else {
+        return foundItem;
+      }
+    })
+      .then((item) => {
+        return Product.remove({_id: item._id})
+      })
+      .then(() => {
         res.send({
           success: true,
           message: "Product successfully deleted",
-          id: product._id
+          id: productId
+        })
+      })
+      .catch(() => {
+        res.send({
+          success: false,
+          message: "The request was not completed. Product with id " + productId + " is not successfully deleted"
         });
+      })
+  }
+
+  uploadSingleImage(req, res) {
+    global.upload(req, res,  (err) => {
+      if (err) {
+        return res.send({status: 'error', message: "Something went wrong!", error: err});
       }
+      return res.send({
+        status: 'success',
+        message: "File uploaded successfully!.",
+        fileName: req.files[0].originalname
+      });
     });
   }
 
-  uploadSingleImage(req,res){
-    global.upload(req, res, function(err) {
-      if (err) {
-        return res.send({status:'error', message:"Something went wrong!",error:err});
-      }
-      return res.send({status:'success', message:"File uploaded successfully!.", fileName:req.files[0].originalname});
-    });
-  }
 
-
-  uploadMultipleImage(req,res){
-    global.moreImagesUpload(req, res, function(err) {
+  uploadMultipleImage(req, res) {
+    global.moreImagesUpload(req, res, (err) => {
       if (err) {
-        return res.send({status:'error', message:"Something went wrong!",error:err});
+        return res.send({status: 'error', message: "Something went wrong!", error: err});
       }
-      return res.send({status:'success', message:"File uploaded successfully!.", files:req.files});
+      return res.send({status: 'success', message: "File uploaded successfully!.", files: req.files});
     });
   }
 }
