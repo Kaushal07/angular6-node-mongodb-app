@@ -1,4 +1,7 @@
 const Product = require('../../models/productModel');
+const fs = require('fs');
+const q = require('q');
+const async = require('async');
 
 class ProductContoller {
   constructor(app) {
@@ -14,15 +17,15 @@ class ProductContoller {
   getAllProducts(req, res) {
     Product.find({})
       .then((products) => {
-      res.send(products);
-    })
+        res.send(products);
+      })
       .catch((e) => {
-      res.send({
-        error: e,
-        success: false,
-        message: "Error while getting products."
-      });
-    })
+        res.send({
+          error: e,
+          success: false,
+          message: "Error while getting products."
+        });
+      })
   }
 
   addProduct(req, res) {
@@ -34,34 +37,34 @@ class ProductContoller {
     });
     product.save()
       .then((createdProduct) => {
-      res.send({
-        success: true,
-        message: "Product successfully added",
-        product: createdProduct
-      });
-    })
+        res.send({
+          success: true,
+          message: "Product successfully added",
+          product: createdProduct
+        });
+      })
       .catch((e) => {
-      res.send({
-        error: e,
-        success: false,
-        message: "Error while adding product."
-      });
-    })
+        res.send({
+          error: e,
+          success: false,
+          message: "Error while adding product."
+        });
+      })
   }
 
   getProduct(req, res) {
     let id = req.params.id;
     Product.find({_id: id})
       .then((product) => {
-      res.send(product[0]);
-    })
+        res.send(product[0]);
+      })
       .catch((e) => {
-      res.send({
-        error: e,
-        success: false,
-        message: "Error while getting product."
-      });
-    })
+        res.send({
+          error: e,
+          success: false,
+          message: "Error while getting product."
+        });
+      })
   }
 
   updateProduct(req, res) {
@@ -94,22 +97,26 @@ class ProductContoller {
   }
 
   deleteProduct(req, res) {
+    let defer = q.defer();
     let productId = req.query.productId;
 
     Product.findById(productId)
       .then((foundItem) => {
-      if (!foundItem) {
-        return res.send({
-          success: false,
-          message: "Product not found.",
-          id: productId
-        });
-      } else {
-        return foundItem;
-      }
+        if (!foundItem) {
+          return res.send({
+            success: false,
+            message: "Product not found.",
+            id: productId
+          });
+        } else {
+          return foundItem;
+        }
+      }).then((foundItem) => {
+      _deleteFile(foundItem);
+      _deleteMultipleFiles(foundItem);
     })
       .then((item) => {
-        return Product.remove({_id: item._id})
+        return Product.remove({_id: productId})
       })
       .then(() => {
         res.send({
@@ -123,18 +130,54 @@ class ProductContoller {
           success: false,
           message: "The request was not completed. Product with id " + productId + " is not successfully deleted"
         });
-      })
+      });
+
+    let _deleteFile = (product) => {
+      fs.unlink(`${global.ROOT_PATH}/${product.ProductImage}`, (error) => {
+        if (error) {
+          defer.reject(error);
+        } else {
+          defer.resolve();
+        }
+      });
+      defer.promise;
+    };
+    let _deleteMultipleFiles = (product) => {
+      let i = 0;
+      async.whilst(
+        () => {
+          if (i === product.MoreProductImages.length) {
+            return false;
+          }
+          return true;
+        },
+        (callback) => {
+          fs.unlink(`${global.ROOT_PATH}/${product.MoreProductImages[i].path}`, (error) => {
+              i++;
+              callback()
+            },
+            (e) => {
+              if (e) {
+                defer.reject(e);
+              } else {
+                defer.resolve();
+              }
+            });
+        }
+      );
+      defer.promise;
+    };
   }
 
   uploadSingleImage(req, res) {
-    global.upload(req, res,  (err) => {
+    global.upload(req, res, (err) => {
       if (err) {
         return res.send({status: 'error', message: "Something went wrong!", error: err});
       }
       return res.send({
         status: 'success',
         message: "File uploaded successfully!.",
-        fileName: req.files[0].originalname
+        filePath: req.files[0].path,
       });
     });
   }

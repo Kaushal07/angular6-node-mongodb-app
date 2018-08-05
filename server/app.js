@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require('body-parser');
 global.__lodash = require('lodash');
 const db = require('./lib/db');
+global.ROOT_PATH = __dirname;
 
 const multer =require('multer');
 //
@@ -10,10 +11,11 @@ const multer =require('multer');
 let storage = multer.diskStorage({
   destination: function (req, file, cb) {
     console.log('file : ', file);
-    cb(null, './uploads')
+    cb(null, `./uploads`)
   },
   filename: function (req, file, cb) {
-    file.originalname  = Math.random().toString(36).substring(2);
+    let splitFileName = file.originalname.split('.');
+    file.originalname  = `${Math.random().toString(36).substring(2)}.${splitFileName[splitFileName.length-1]}`;
     cb(null, file.originalname);
   }
 });
